@@ -2,3 +2,5 @@
 data/
 
 .ipynb_checkpoints/crawler-checkpoint.ipynb
+
+.ipynb_checkpoints/crawler-checkpoint.py
