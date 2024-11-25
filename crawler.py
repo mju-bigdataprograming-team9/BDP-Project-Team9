@@ -1,9 +1,10 @@
+from datetime import datetime, timedelta
+from bs4 import BeautifulSoup
 import requests
 import json
 import time
-from bs4 import BeautifulSoup
-import os
 import csv
+import os
 import re
 
 # constant
@@ -32,7 +33,6 @@ LIKE_ANALYTICAL_COUNT = 'like_analytical_count' # TODO # 분석탁월
 LIKE_RECOMMEND_COUNT = 'like_recommend_count'   # TODO # 후속강추
 
 # 위에서부터 중요도 순으로 정렬되어 있음
-
 sections = {
     "부동산": {SECTION_ID: "101", SUB_SECTION_ID: "260"},
     "금융": {SECTION_ID: "101", SUB_SECTION_ID: "259"},
@@ -50,6 +50,7 @@ sections = {
     "국방/외교": {SECTION_ID: "100", SUB_SECTION_ID: "267"},
 }
 
+
 def init_article_data():
     return {
         ARTICLE_ID: None,
@@ -63,6 +64,15 @@ def init_article_data():
         UPDATED_AT: None,
         CONTENT_ORIGIN: None,
         CONTENT_TEXT: None,
+        # COMMENT_TOTAL_COUNT: None,
+        # COMMENT_CURRENT_COUNT: None,
+        # COMMENT_DELETED_COUNT: None
+        # LIKE_TOTAL_COUNT: None,
+        # LIKE_USEFUL_COUNT: None,
+        # LIKE_WOW_COUNT: None,
+        # LIKE_TOUCHED_COUNT: None,
+        # LIKE_ANALYTICAL_COUNT: None,
+        # LIKE_RECOMMEND_COUNT: None,
     }
 
 def extract_comment_count(newspaper_id, article_id):
@@ -120,11 +130,30 @@ def extract_article_data(section_id, sub_section_id, url):
     article_data[CONTENT_TEXT] = content_node.text.strip() if content_node else None
     article_data[CONTENT_ORIGIN] = content_node if content_node else None
 
+    # 댓글 수
+    # comment_total_node = soup.find('span', {'class': 'u_cbox_head'})
+    # article_data[COMMENT_TOTAL_COUNT] = comment_total_node.text.strip()
+
+    # 좋아요 수
+    # like_total_node = soup.find('span', {'class':"u_likeit_text _count num"})
+    # article_data[LIKE_TOTAL_COUNT] = like_total_node.text.strip()
+    # like_useful_node = soup.find('li', {'class':"u_likeit_list useful"}).find('span', 'u_likeit_list_count _count')
+    # article_data[LIKE_USEFUL_COUNT] = like_useful_node.text.strip()
+    # like_wow_node = soup.find('li', {'class':"u_likeit_list wow"}).find('span', 'u_likeit_list_count _count')
+    # article_data[LIKE_WOW_COUNT] = like_wow_node.text.strip()
+    # like_touched_node = soup.find('li', {'class':"u_likeit_list touched"}).find('span', 'u_likeit_list_count _count')
+    # article_data[LIKE_TOUCHED_COUNT] = like_touched_node.text.strip()
+    # like_analytical_node = soup.find('li', {'class':"u_likeit_list analytical"}).find('span', 'u_likeit_list_count _count')
+    # article_data[LIKE_ANALYTICAL_COUNT] = like_analytical_node.text.strip()
+    # like_recommend_node = soup.find('li', {'class':"u_likeit_list recommend"}).find('span', 'u_likeit_list_count _count')
+    # article_data[LIKE_RECOMMEND_COUNT] = like_recommend_node.text.strip()
+    
+
     return article_data
 
-def load_article_list(section_id, sub_section_id, data_cursor):
+def load_article_list(section_id, sub_section_id, date, data_cursor=""):
     # 요청할 URL
-    url = f'https://news.naver.com/section/template/SECTION_ARTICLE_LIST_FOR_LATEST?sid={section_id}&sid2={sub_section_id}&cluid=&pageNo=1&date=&next={data_cursor}'
+    url = f'https://news.naver.com/section/template/SECTION_ARTICLE_LIST_FOR_LATEST?sid={section_id}&sid2={sub_section_id}&cluid=&pageNo=1&date={date}&next={data_cursor}'
     
     # HTTP GET 요청을 보내고 응답을 받음
     response = requests.get(url)
@@ -144,7 +173,15 @@ def load_article_list(section_id, sub_section_id, data_cursor):
                 soup = BeautifulSoup(section_article_list_html, 'html.parser')
                 
                 next_div = soup.find('div', {'data-cursor-name': 'next'})
-                next_data_cusor = next_div.get("data-cursor")
+                next_data_cusor = ""
+                next_date = ""
+                if next_div.get("data-has-next") == "true":
+                    next_data_cusor = next_div.get("data-cursor")
+                    next_date = next_data_cusor[:8]
+                else:
+                    date_obj = datetime.strptime("20241125", "%Y%m%d")
+                    next_date_obj = date_obj + timedelta(days=-1)
+                    next_date = next_date_obj.strftime("%Y%m%d")
                 
                 # "https://n.news.naver.com/mnews/article/{id}/{id}" 형식의 URL만 필터링 (id는 숫자와 문자가 섞인 형식)
                 href_list = list({
@@ -156,7 +193,7 @@ def load_article_list(section_id, sub_section_id, data_cursor):
                 # URL 리스트 정렬
                 href_list.sort()
 
-                return (next_data_cusor, href_list)
+                return (next_date, next_data_cusor, href_list)
     
             else:
                 print("ERROR>>> SECTION_ARTICLE_LIST_FOR_LATEST 내용이 없습니다.")
@@ -165,10 +202,10 @@ def load_article_list(section_id, sub_section_id, data_cursor):
     else:
         print(f"ERROR>>> Failed to retrieve the page. Status code: {response.status_code}")
 
-def save(section_id, sub_section_id, file_id, data=[]):
+def save(section_id, sub_section_id, date, file_id, data=[]):
     # CSV 파일 경로
     directory = "./data"
-    save_file_name = f"article_{section_id}_{sub_section_id}_{file_id}.csv"
+    save_file_name = f"article_{section_id}_{sub_section_id}_{date}_{file_id}.csv"
     save_file_path = os.path.join(directory, save_file_name)
     
     # 필드 이름 (헤더)
@@ -192,51 +229,26 @@ def save(section_id, sub_section_id, file_id, data=[]):
         # 데이터 추가
         for row in data:
             writer.writerow(row)
+            
+    return save_file_path
 
-def get_next_data_cursor(section, data_cursor):
-    url = f'https://news.naver.com/section/template/SECTION_ARTICLE_LIST_FOR_LATEST?sid={section[SECTION_ID]}&sid2={section[SUB_SECTION_ID]}&cluid=&pageNo=1&date=&next={data_cursor}'
-    # HTTP GET 요청을 보내고 응답을 받음
-    response = requests.get(url)
-    
-    # 요청이 성공적으로 이루어졌는지 확인 (상태 코드가 200인 경우)
-    if response.status_code == 200:
-        # JSON 데이터 파싱
-        json_data = response.json()
-    
-        # renderedComponent 내에서 SECTION_ARTICLE_LIST 추출
-        try:
-            rendered_component = json_data['renderedComponent']
-            section_article_list_html = rendered_component.get('SECTION_ARTICLE_LIST_FOR_LATEST', '')
-    
-            # SECTION_ARTICLE_LIST의 값이 HTML이면 BeautifulSoup으로 파싱
-            if section_article_list_html:
-                soup = BeautifulSoup(section_article_list_html, 'html.parser')
-                
-                next_div = soup.find('div', {'data-cursor-name': 'next'})
-                next_data_cusor = next_div.get("data-cursor")
-                
-                return next_data_cusor
-    
-            else:
-                print("ERROR>>> SECTION_ARTICLE_LIST_FOR_LATEST 내용이 없습니다.")
-        except KeyError as e:
-            print(f"ERROR>>> '{e}' 키를 찾을 수 없습니다.")
-    else:
-        print(f"ERROR>>> Failed to retrieve the page. Status code: {response.status_code}")
 
+# 실제 실행 코드
 if __name__ == '__main__':
-    section = sections.get("행정") # 크롤링할 섹션 지정
-    data_cursor='' # 중단 후 이어서 진행 시 data_cursor 갑 지정
-    while(data_cursor=='' or data_cursor >= '2024112300000000000'): # 기한 지정
-        print(f"start loading {data_cursor}...")
-        data_cursor, href_list = load_article_list(section[SECTION_ID], section[SUB_SECTION_ID], data_cursor)
-        print(f"Complete loading {data_cursor} successfully!")
+    section = sections.get("부동산") # 크롤링할 섹션 지정
+    date = "20241025" # 시작일자 지정
+    data_cursor='' # data_cursor 초기화, 안 건드려도 됨
+    while(data_cursor=='' or date >= '20241025'): # 기한 지정
+        current_data_cursor, current_date = data_cursor, date
+        print(f"start loading {current_data_cursor}...")
+        date, data_cursor, href_list = load_article_list(section[SECTION_ID], section[SUB_SECTION_ID], current_date, current_data_cursor)
+        print(f"Complete loading {current_data_cursor} successfully!")
         article_data_list = []
         for url in href_list:
             print(f"Start extracting {url}...")
             article_data_list.append(extract_article_data(section[SECTION_ID], section[SUB_SECTION_ID], url))
             print(f"Complete extracting Successfully!")
             time.sleep(1)
-        print(f"Save data... file_id: {data_cursor}")
-        save(section[SECTION_ID], section[SUB_SECTION_ID], data_cursor, article_data_list)
-        print(f"Saved.")
+        print(f"Save data...")
+        save_file_path = save(section[SECTION_ID], section[SUB_SECTION_ID], date, current_data_cursor, article_data_list)
+        print(f"Saved in: {save_file_path}.")
