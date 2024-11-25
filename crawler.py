@@ -179,7 +179,7 @@ def load_article_list(section_id, sub_section_id, date, data_cursor=""):
                     next_data_cusor = next_div.get("data-cursor")
                     next_date = next_data_cusor[:8]
                 else:
-                    date_obj = datetime.strptime("20241125", "%Y%m%d")
+                    date_obj = datetime.strptime(date, "%Y%m%d")
                     next_date_obj = date_obj + timedelta(days=-1)
                     next_date = next_date_obj.strftime("%Y%m%d")
                 
@@ -252,3 +252,5 @@ if __name__ == '__main__':
         print(f"Save data...")
         save_file_path = save(section[SECTION_ID], section[SUB_SECTION_ID], date, current_data_cursor, article_data_list)
         print(f"Saved in: {save_file_path}.")
+        
+    print(f"Process Completed.")
