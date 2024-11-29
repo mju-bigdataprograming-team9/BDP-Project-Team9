@@ -7,6 +7,8 @@ import csv
 import os
 import re
 
+from functools import wraps
+
 # constant
 ARTICLE_ID = 'article_id'
 SECTION_ID = 'section_id'
@@ -50,6 +52,28 @@ sections = {
     "국방/외교": {SECTION_ID: "100", SUB_SECTION_ID: "267"},
 }
 
+# retry 데코레이터 정의
+def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
+    """Retry calling the decorated function using an exponential backoff."""
+    def deco_retry(f):
+        @wraps(f)
+        def f_retry(*args, **kwargs):
+            mtries, mdelay = tries, delay
+            while mtries > 1:
+                try:
+                    return f(*args, **kwargs)
+                except ExceptionToCheck as e:
+                    msg = f"{str(e)}, Retrying in {mdelay} seconds..."
+                    if logger:
+                        logger.warning(msg)
+                    else:
+                        print(msg)
+                    time.sleep(mdelay)
+                    mtries -= 1
+                    mdelay *= backoff
+            return f(*args, **kwargs)
+        return f_retry
+    return deco_retry
 
 def init_article_data():
     return {
@@ -151,6 +175,8 @@ def extract_article_data(section_id, sub_section_id, url):
 
     return article_data
 
+# retry 어노테이션 추가
+@retry(Exception, tries=4, delay=5, backoff=2)
 def load_article_list(section_id, sub_section_id, date, data_cursor=""):
     # 요청할 URL
     url = f'https://news.naver.com/section/template/SECTION_ARTICLE_LIST_FOR_LATEST?sid={section_id}&sid2={sub_section_id}&cluid=&pageNo=1&date={date}&next={data_cursor}'
@@ -236,9 +262,9 @@ def save(section_id, sub_section_id, date, file_id, data=[]):
 # 실제 실행 코드
 if __name__ == '__main__':
     section = sections.get("부동산") # 크롤링할 섹션 지정
-    date = "20241025" # 시작일자 지정
+    date = "20231013" # 시작일자 지정
     data_cursor='' # data_cursor 초기화, 안 건드려도 됨
-    while(data_cursor=='' or date >= '20241025'): # 기한 지정
+    while(data_cursor=='' or date >= '20230525'): # 기한 지정
         current_data_cursor, current_date = data_cursor, date
         print(f"start loading {current_data_cursor}...")
         date, data_cursor, href_list = load_article_list(section[SECTION_ID], section[SUB_SECTION_ID], current_date, current_data_cursor)
