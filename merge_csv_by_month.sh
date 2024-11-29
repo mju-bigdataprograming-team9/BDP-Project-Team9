@@ -6,11 +6,13 @@ TARGET_DIR="./merged_data"
 
 # 합칠 기준 날짜 설정 (YYYYMM)
 START_MONTH="202411"
+END_MONTH="202311"
 
-# 대상 디렉토리가 없으면 생성
-if [ ! -d "$TARGET_DIR" ]; then
-    mkdir -p "$TARGET_DIR"
+# 대상 디렉토리가 있으면 삭제 후 다시 생성
+if [ -d "$TARGET_DIR" ]; then
+    rm -rf "$TARGET_DIR"
 fi
+mkdir -p "$TARGET_DIR"
 
 
 echo "Starting merge process..."
@@ -20,14 +22,12 @@ CURRENT_MONTH="$START_MONTH"
 while true; do
     echo "Processing files for month: $CURRENT_MONTH"
     OUTPUT_FILE="$TARGET_DIR/merged_${CURRENT_MONTH}.csv"
+    if [ "$CURRENT_MONTH" -lt "$END_MONTH" ]; then
+        break
+    fi
     
     # 해당 월에 해당하는 파일 찾기
     FILES=$(find "$SOURCE_DIR" -type f -name "article_*_${CURRENT_MONTH}*.csv" | sort -r)
-    
-    # 파일이 없으면 다음 달로 이동
-    if [ -z "$FILES" ]; then
-        break
-    fi
     
     # 헤더 처리용 플래그
     HEADER_WRITTEN=false
