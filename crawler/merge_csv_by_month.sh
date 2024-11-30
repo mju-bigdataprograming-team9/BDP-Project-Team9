@@ -5,8 +5,8 @@ SOURCE_DIR="./data"
 TARGET_DIR="./merged_data"
 
 # 합칠 기준 날짜 설정 (YYYYMM)
-START_MONTH="202411"
-END_MONTH="202311"
+START_MONTH="202111"
+END_MONTH="202011"
 
 # 대상 디렉토리가 있으면 삭제 후 다시 생성
 if [ -d "$TARGET_DIR" ]; then

@@ -262,9 +262,9 @@ def save(section_id, sub_section_id, date, file_id, data=[]):
 # 실제 실행 코드
 if __name__ == '__main__':
     section = sections.get("부동산") # 크롤링할 섹션 지정
-    date = "20231013" # 시작일자 지정
+    date = "20210208" # 시작일자 지정
     data_cursor='' # data_cursor 초기화, 안 건드려도 됨
-    while(data_cursor=='' or date >= '20230525'): # 기한 지정
+    while(data_cursor=='' or date >= '20201124'): # 기한 지정
         current_data_cursor, current_date = data_cursor, date
         print(f"start loading {current_data_cursor}...")
         date, data_cursor, href_list = load_article_list(section[SECTION_ID], section[SUB_SECTION_ID], current_date, current_data_cursor)
