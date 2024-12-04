@@ -4,3 +4,7 @@ data/
 .ipynb_checkpoints/crawler-checkpoint.ipynb
 
 .ipynb_checkpoints/crawler-checkpoint.py
+
+.ipynb_checkpoints/
+
+api-server/__pycache__/
