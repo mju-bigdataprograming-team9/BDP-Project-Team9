@@ -1,18 +1,13 @@
-# vm에서 사용할 형태소 분석기 사용한 tf-idf Mecab 코드입니다.
 import os
 import pandas as pd
-from MeCab import Tagger  # konlpy 대신 MeCab 직접 사용
+from MeCab import Tagger  
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # 1. MeCab 형태소 분석기 초기화
-tagger = Tagger('-d /usr/local/lib/mecab/dic/mecab-ko-dic')  # MeCab 경로 명시
+tagger = Tagger('-d /usr/local/lib/mecab/dic/mecab-ko-dic -u /usr/local/lib/mecab/dic/mecab-ko-dic/user.dic')  # MeCab 경로 명시
 
-# 2. 형태소 분석 및 불용어 제거 함수 정의
-stopwords = [
-    '주택', '아파트', '오피스텔', '집값', '가구', '서울', '분양', '부동산', '지구', 
-    '수주', '역대', '사업', '서울시', '국토', '구역', '공시', '건설', '개발', '규제','스테이트',
-    '지역', '도시', '가격', '한국', '빌라', '주거', '회장', '분기', '공사','영업'
-]
+# 2. 형태소 분석 및 불용어 제거 함수 정의 - 불용어 빈배열 사용 
+stopwords = []
 
 def clean_and_tokenize(text):
     if not isinstance(text, str) or text.strip() == "":
@@ -51,7 +46,11 @@ for csv_file in csv_files:
 
         # TF-IDF 벡터화
         cleaned_text_data = df['tokenized'].dropna()  # 결측치 제거
-        tfidf_vectorizer = TfidfVectorizer(max_features=1000, stop_words=None)  # 최대 1000개 단어 사용
+        tfidf_vectorizer = TfidfVectorizer(
+            max_features=1000,  # 최대 1000개 단어 사용
+            stop_words=None,
+            ngram_range=(2, 3)  # n-gram 범위 설정
+        )
         tfidf_matrix = tfidf_vectorizer.fit_transform(cleaned_text_data)
 
         # TF-IDF 결과를 데이터프레임으로 변환
@@ -63,7 +62,7 @@ for csv_file in csv_files:
 
         # 상위 N개 단어 추출
         word_tfidf_mean = tfidf_df.mean(axis=0)
-        top_n = 30
+        top_n = 50
         top_tfidf_words = word_tfidf_mean.sort_values(ascending=False).head(top_n)
 
         # 결과 저장할 파일명 설정
