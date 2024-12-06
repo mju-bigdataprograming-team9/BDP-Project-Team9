@@ -3,7 +3,7 @@ import pandas as pd
 import re
 from collections import Counter
 
-# 정책 라벨과 관련 단어 정의
+# 정책 키워드 정의
 policy_labels = {
     1: ["실거래가", "전매 제한", "경매", "주택 거래", "안정화 대책", "매각",
         "부동산 매매", "매매가", "매물", "매수", "매입", "투기지역",
@@ -20,14 +20,11 @@ policy_labels = {
 directory_path = '/home/maria_dev/crawler/merged_data'  # CSV 파일들이 있는 디렉토리 경로
 csv_files = [os.path.join(directory_path, file) for file in os.listdir(directory_path) if file.endswith('.csv')]
 
-# 파일별 정책 단어 카운트 저장
-policy_data = []
-
-# 가중치 설정
-title_weight = 2
-body_weight = 1
-
 # 모든 CSV 파일 처리 및 단어 카운트
+policy_data = []
+max_policy_counts = Counter()
+
+# 모든 CSV 파일 처리
 for file_path in csv_files:
     print(f"Processing file: {file_path}")
     try:
@@ -37,26 +34,30 @@ for file_path in csv_files:
         articles = data['content_text'].dropna()
 
         # 단어 카운트 초기화
-        file_counter = Counter()
+        policy_totals = {policy_id: 0 for policy_id in policy_labels.keys()}
 
-        # 제목과 본문에서 키워드 Count (단어 단위)
+        # 제목과 본문에서 키워드 Count (구 단위 포함)
         for title in titles:
-            title_words = re.findall(r'\w+', title)
-            file_counter.update({word: count * title_weight for word, count in Counter(title_words).items()})
-
+            for policy_id, policy_words in policy_labels.items():
+                for word in policy_words:
+                    count = len(re.findall(re.escape(word), title))
+                    policy_totals[policy_id] += count * 2  # 제목은 가중치 2배
+        
         for article in articles:
-            body_words = re.findall(r'\w+', article)
-            file_counter.update({word: count * body_weight for word, count in Counter(body_words).items()})
-
-        # 정책별 단어 수 계산 (단어 단위)
-        policy_totals = {policy_id: sum(file_counter[word] for word in policy_words)
-                         for policy_id, policy_words in policy_labels.items()}
+            for policy_id, policy_words in policy_labels.items():
+                for word in policy_words:
+                    count = len(re.findall(re.escape(word), article))
+                    policy_totals[policy_id] += count  # 본문은 가중치 1배
 
         # 파일별 단어 수 저장
         file_name = os.path.basename(file_path)
         month = re.search(r'_(\d+)\.csv', file_name).group(1)
         for policy_id, total in policy_totals.items():
             policy_data.append((month, f"정책 {policy_id}", total))
+
+        # 최다 단어 정책 계산
+        max_policy_id = max(policy_totals, key=policy_totals.get)
+        max_policy_counts[max_policy_id] += 1
 
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
@@ -65,26 +66,33 @@ for file_path in csv_files:
 df = pd.DataFrame(policy_data, columns=['월', '정책', '단어 수'])
 monthly_summary = df.pivot_table(index='월', columns='정책', values='단어 수', aggfunc='sum').fillna(0).reset_index()
 
-# 중간값 및 상위 10 값 계산
+# 중간값 및 상위 5 값 계산
 policy_medians = df.groupby('정책')['단어 수'].median().to_dict()
-top10_thresholds = {policy: monthly_summary[policy].nlargest(10).min() for policy in monthly_summary.columns if policy != '월'}
+top5_thresholds = {policy: monthly_summary[policy].nlargest(5).min() for policy in df['정책'].unique()}
 
 # 정책type 할당 함수
-def assign_policy_type_with_top10(row, policy_medians, top10_thresholds):
+def assign_policy_type_with_top5(row, policy_medians, top5_thresholds):
     valid_policies = {}
     for policy, median in policy_medians.items():
-        if row[policy] > median and row[policy] >= top10_thresholds[policy]:
+        if row[policy] > median and row[policy] >= top5_thresholds[policy]:
             valid_policies[policy] = row[policy]
     if valid_policies:
         return max(valid_policies, key=valid_policies.get)
     return "None"
 
 # 정책type 할당
-monthly_summary['정책type'] = monthly_summary.apply(assign_policy_type_with_top10, axis=1, 
+monthly_summary['정책type'] = monthly_summary.apply(assign_policy_type_with_top5, axis=1, 
                                                     policy_medians=policy_medians, 
-                                                    top10_thresholds=top10_thresholds)
+                                                    top5_thresholds=top5_thresholds)
 
-# 최종 결과 저장
-output_file = "policy_5_merged_summary_result.csv"
+# 최다 단어 정책별 카운트 출력
+print("\n최다 단어 정책별 총합")
+total_files = sum(max_policy_counts.values())
+for policy_id, count in max_policy_counts.items():
+    print(f"  정책 {policy_id}: {count}개 파일")
+print(f"  총 파일 수: {total_files}개 파일")
+
+# 결과 저장
+output_file = "policy_summary_5_2_results.csv"
 monthly_summary.to_csv(output_file, index=False, encoding='utf-8-sig')
 print(f"분석 결과가 {output_file}에 저장되었습니다.")
