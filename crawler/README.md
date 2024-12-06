@@ -22,20 +22,20 @@
 ### 기사 하위 카테고리 구분
 ```json
 {
-    "부동산": {SECTION_ID: "101", SUB_SECTION_ID: "260"},
-    "금융": {SECTION_ID: "101", SUB_SECTION_ID: "259"},
-    "증권": {SECTION_ID: "101", SUB_SECTION_ID: "258"},
-    "생활경제": {SECTION_ID: "101", SUB_SECTION_ID: "310"},
-    "경제 일반": {SECTION_ID: "101", SUB_SECTION_ID: "263"},
-    "행정": {SECTION_ID: "100", SUB_SECTION_ID: "266"},
-    "정치일반": {SECTION_ID: "100", SUB_SECTION_ID: "269"},
-    "산업/재계": {SECTION_ID: "101", SUB_SECTION_ID: "261"},
-    "중기/벤처": {SECTION_ID: "101", SUB_SECTION_ID: "771"},
-    "글로벌 경제": {SECTION_ID: "101", SUB_SECTION_ID: "262"},
-    "대통령실": {SECTION_ID: "100", SUB_SECTION_ID: "264"},
-    "국회/정당": {SECTION_ID: "100", SUB_SECTION_ID: "265"},
-    "북한": {SECTION_ID: "100", SUB_SECTION_ID: "268"},
-    "국방/외교": {SECTION_ID: "100", SUB_SECTION_ID: "267"},
+    "부동산": {"section_id": "101", "sub_section_id": "260"},
+    "금융": {"section_id": "101", "sub_section_id": "259"},
+    "증권": {"section_id": "101", "sub_section_id": "258"},
+    "생활경제": {"section_id": "101", "sub_section_id": "310"},
+    "경제 일반": {"section_id": "101", "sub_section_id": "263"},
+    "행정": {"section_id": "100", "sub_section_id": "266"},
+    "정치일반": {"section_id": "100", "sub_section_id": "269"},
+    "산업/재계": {"section_id": "101", "sub_section_id": "261"},
+    "중기/벤처": {"section_id": "101", "sub_section_id": "771"},
+    "글로벌 경제": {"section_id": "101", "sub_section_id": "262"},
+    "대통령실": {"section_id": "100", "sub_section_id": "264"},
+    "국회/정당": {"section_id": "100", "sub_section_id": "265"},
+    "북한": {"section_id": "100", "sub_section_id": "268"},
+    "국방/외교": {"section_id": "100", "sub_section_id": "267"},
 }
 ```
 
