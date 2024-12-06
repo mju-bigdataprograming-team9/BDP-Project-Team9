@@ -19,9 +19,9 @@
 
 ## 실행 방법
 
-### 기사 카테고리 구분
+### 기사 하위 카테고리 구분
 ```json
-sections = {
+{
     "부동산": {SECTION_ID: "101", SUB_SECTION_ID: "260"},
     "금융": {SECTION_ID: "101", SUB_SECTION_ID: "259"},
     "증권": {SECTION_ID: "101", SUB_SECTION_ID: "258"},
