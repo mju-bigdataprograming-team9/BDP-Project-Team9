@@ -8,3 +8,5 @@ data/
 .ipynb_checkpoints/
 
 api-server/__pycache__/
+
+*.log
