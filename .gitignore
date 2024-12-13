@@ -10,3 +10,5 @@ data/
 api-server/__pycache__/
 
 *.log
+
+api-server/api_results.csv
